@@ -12,7 +12,7 @@ import (
 
 type User struct {
 	Id       int    `json:"id"`
-	UserName string `json:"username"`
+	UserName string `json:"username" gorm:"column:username"`
 	Password string `json:"password"`
 	CreateAt int64  `json:"create_at"`
 	UpdateAt int64  `json:"update_at"`
@@ -76,8 +76,59 @@ func DeleteUser(c *gin.Context) {
 		//db.WithContext(c).Table("users").Delete(&user)
 		db.WithContext(c).Table("users").Where("id = ?", user.Id).Delete(&user)
 		c.JSON(200, gin.H{
-			"message": "根据id找到用户",
+			"message": "找到用户并删除",
 			"ID":      user.Id,
+		})
+	}
+}
+
+// 查找用户
+
+// 如果想返回一个自定义的数据需要自己创建一个结构体这样就可以了，如果直接返回user的话，会有密码等信息暴露出来
+
+//	type UserResponse struct {
+//		ID       uint   `json:"id"`
+//		Username string `json:"username"`
+//	}
+//
+// userResponse := UserResponse{
+// ID:       user.ID,
+// Username: user.UserName,
+// }
+func FindUser(c *gin.Context) {
+	//根据用户名或者id查找用户
+	var user User
+	// 绑定json数据
+	if err := c.ShouldBindJSON(&user); err != nil {
+		c.JSON(200, gin.H{
+			"message": "参数输入错误",
+		})
+		return
+	}
+	//判断传递过来的参数是username还是id
+	if user.UserName != "" {
+
+		ins := db.WithContext(c).Table("users").Where("username = ?", user.UserName).First(&user)
+		if ins.Error != nil {
+			c.JSON(200, gin.H{
+				"message": "没有找到匹配用户",
+			})
+		}
+		c.JSON(200, gin.H{
+			"message": "成功根据username找到用户",
+			"data":    user,
+		})
+
+	} else if user.Id != 0 {
+		ins := db.WithContext(c).Table("users").Where("id = ?", user.Id).First(&user)
+		if ins.Error != nil {
+			c.JSON(200, gin.H{
+				"message": "没有找到匹配用户",
+			})
+		}
+		c.JSON(200, gin.H{
+			"message": "成功根据id找到用户",
+			"data":    user,
 		})
 	}
 }

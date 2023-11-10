@@ -8,5 +8,6 @@ import (
 func USER_API_ROUTER(r *gin.Engine) {
 	userapi := r.Group("/api/user")
 	userapi.POST("create", user.CreateUser)
-	userapi.POST("delete", user.DeleteUser)
+	userapi.DELETE("delete", user.DeleteUser)
+	userapi.GET("finduser", user.FindUser)
 }
