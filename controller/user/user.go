@@ -3,6 +3,7 @@ package user
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -16,6 +17,7 @@ type User struct {
 	Password string `json:"password"`
 	CreateAt int64  `json:"create_at"`
 	UpdateAt int64  `json:"update_at"`
+	UserRole string `json:"user_role"`
 }
 
 var db *gorm.DB
@@ -49,11 +51,18 @@ func CreateUser(c *gin.Context) {
 		})
 		return
 	}
+	//新增密码哈希，不将明文密码存入数据库
+	b, _ := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	db.AutoMigrate(&user)
 	user.UserName = user.UserName
-	user.Password = user.Password
+	user.Password = string(b)
 	user.CreateAt = time.Now().Unix()
+	user.UserRole = string(1) //admin=0, user=1
 	db.WithContext(c).Table("users").Create(&user)
+	c.JSON(200, gin.H{
+		"message": "创建用户成功",
+		"user":    user.UserName,
+	})
 }
 
 func DeleteUser(c *gin.Context) {
@@ -82,8 +91,59 @@ func DeleteUser(c *gin.Context) {
 	}
 }
 
-// 查找用户
+// 更新用户信息 通过id来绑定user来更新用户信息
+func UpdateUser(c *gin.Context) {
+	var user User
+	// 绑定json数据
+	if err := c.ShouldBindJSON(&user); err != nil {
+		c.JSON(200, gin.H{
+			"message": "ID输入错误",
+		})
+		return
+	}
 
+	//构建一个map来存储需要更新的字段
+	updateFields := make(map[string]interface{})
+
+	// 如果用户名不为空，添加到更新字段中
+	if user.UserName != "" {
+		updateFields["username"] = user.UserName
+	}
+	// 如果用户角色不为空，添加到更新字段中
+	if user.UserRole != "" {
+		updateFields["user_role"] = user.UserRole
+	}
+	// 如果密码不为空，添加到更新字段中
+	if user.Password != "" {
+		// 如果更新密码，跟创建用户一样，需要加密
+		b, _ := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+		updateFields["password"] = string(b)
+	}
+
+	////通过用户传入的id来查找用户，找不到的话直接返回
+	ins := db.WithContext(c).Table("users").Where("id = ?", user.Id).First(&user).Error
+	if ins != nil {
+		c.JSON(200, gin.H{
+			"message": "没有找到匹配用户",
+		})
+		return
+	}
+	// 如果更新字段不为空，执行更新操作
+	if len(updateFields) > 0 {
+		updateFields["update_at"] = time.Now().Unix()
+		db.WithContext(c).Table("users").Where("id = ?", user.Id).Updates(updateFields)
+		c.JSON(200, gin.H{
+			"message": "找到用户并更新",
+			"ID":      user.Id,
+		})
+	} else {
+		c.JSON(200, gin.H{
+			"message": "没有提供需要更新的字段",
+		})
+	}
+}
+
+// 查找用户
 // 如果想返回一个自定义的数据需要自己创建一个结构体这样就可以了，如果直接返回user的话，会有密码等信息暴露出来
 
 //	type UserResponse struct {
