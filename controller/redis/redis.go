@@ -33,7 +33,7 @@ func CreateRedisInstance(opType, key string, durationInSeconds time.Duration, va
 		if len(values) == 0 {
 			return "", fmt.Errorf("缺少值参数")
 		}
-		//durationInSeconds := 7200
+
 		err := rdb.SetEX(ctx, key, values[0], time.Duration(durationInSeconds)).Err()
 
 		if err != nil {

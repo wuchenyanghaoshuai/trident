@@ -6,6 +6,7 @@ import (
 	"github.com/rs/xid"
 	"golang.org/x/crypto/bcrypt"
 	"time"
+	"wuchenyanghaoshuai/trident/controller/mysql"
 	"wuchenyanghaoshuai/trident/controller/redis"
 )
 
@@ -17,13 +18,15 @@ type UserLoginForm struct {
 func Login(c *gin.Context) {
 	var userloginform UserLoginForm
 	if err := c.ShouldBindJSON(&userloginform); err != nil {
+
 		c.JSON(200, gin.H{
 			"message": "错误的请求参数",
 		})
 		return
 	}
 	var user User
-	ins := db.WithContext(c).Table("users").Where("username = ?", userloginform.UserName).First(&user).Error
+	fmt.Println(user.UserName, user.Password)
+	ins := mysql.DB.WithContext(c).Table("users").Where("username = ?", userloginform.UserName).First(&user).Error
 	if ins != nil {
 		c.JSON(200, gin.H{
 			"message": "用户名或密码输入错误",

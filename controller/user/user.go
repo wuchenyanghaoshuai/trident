@@ -1,14 +1,11 @@
 package user
 
 import (
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
-	"gorm.io/driver/mysql"
-	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
 
 	"time"
+	"wuchenyanghaoshuai/trident/controller/mysql"
 )
 
 type User struct {
@@ -20,22 +17,21 @@ type User struct {
 	UserRole string `json:"user_role"`
 }
 
-var db *gorm.DB
-
-func init() {
-	var err error
-	dsn := "root:123456@tcp(127.0.0.1:3306)/trident?charset=utf8mb4&parseTime=True&loc=Local"
-	db, err = gorm.Open(mysql.Open(dsn), &gorm.Config{Logger: logger.Default.LogMode(logger.Info)})
-	if err != nil {
-		return
-	}
-	fmt.Println(db)
-}
+//var db *gorm.DB
+//
+//func init() {
+//	var err error
+//	dsn := "root:123456@tcp(127.0.0.1:3306)/trident?charset=utf8mb4&parseTime=True&loc=Local"
+//	db, err = gorm.Open(mysql.Open(dsn), &gorm.Config{Logger: logger.Default.LogMode(logger.Info)})
+//	if err != nil {
+//		return
+//	}
+//	fmt.Println(db)
+//}
 
 // 第一版本写的比较简单，没有把 数据库，和 用户名密码检查 和数据库加密 抽出来 下一步要抽出来让代码更简洁一些
 func CreateUser(c *gin.Context) {
 	var user User
-	// 连接数据库
 
 	// 绑定json数据
 	if err := c.ShouldBindJSON(&user); err != nil {
@@ -53,12 +49,14 @@ func CreateUser(c *gin.Context) {
 	}
 	//新增密码哈希，不将明文密码存入数据库
 	b, _ := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
-	db.AutoMigrate(&user)
+	//mysql.Init()
+	mysql.DB.AutoMigrate(&user)
+
 	user.UserName = user.UserName
 	user.Password = string(b)
 	user.CreateAt = time.Now().Unix()
 	user.UserRole = string(1) //admin=0, user=1
-	db.WithContext(c).Table("users").Create(&user)
+	mysql.DB.WithContext(c).Table("users").Create(&user)
 	c.JSON(200, gin.H{
 		"message": "创建用户成功",
 		"user":    user.UserName,
@@ -75,7 +73,7 @@ func DeleteUser(c *gin.Context) {
 		return
 	}
 	//如果ins的结果为record not found 那么直接返回
-	ins := db.WithContext(c).Table("users").Where("id = ?", user.Id).First(&user).Error
+	ins := mysql.DB.WithContext(c).Table("users").Where("id = ?", user.Id).First(&user).Error
 	if ins != nil {
 		c.JSON(200, gin.H{
 			"message": "没有找到匹配用户",
@@ -83,7 +81,7 @@ func DeleteUser(c *gin.Context) {
 		return
 	} else {
 		//db.WithContext(c).Table("users").Delete(&user)
-		db.WithContext(c).Table("users").Where("id = ?", user.Id).Delete(&user)
+		mysql.DB.WithContext(c).Table("users").Where("id = ?", user.Id).Delete(&user)
 		c.JSON(200, gin.H{
 			"message": "找到用户并删除",
 			"ID":      user.Id,
@@ -121,7 +119,7 @@ func UpdateUser(c *gin.Context) {
 	}
 
 	////通过用户传入的id来查找用户，找不到的话直接返回
-	ins := db.WithContext(c).Table("users").Where("id = ?", user.Id).First(&user).Error
+	ins := mysql.DB.WithContext(c).Table("users").Where("id = ?", user.Id).First(&user).Error
 	if ins != nil {
 		c.JSON(200, gin.H{
 			"message": "没有找到匹配用户",
@@ -131,7 +129,7 @@ func UpdateUser(c *gin.Context) {
 	// 如果更新字段不为空，执行更新操作
 	if len(updateFields) > 0 {
 		updateFields["update_at"] = time.Now().Unix()
-		db.WithContext(c).Table("users").Where("id = ?", user.Id).Updates(updateFields)
+		mysql.DB.WithContext(c).Table("users").Where("id = ?", user.Id).Updates(updateFields)
 		c.JSON(200, gin.H{
 			"message": "找到用户并更新",
 			"ID":      user.Id,
@@ -168,7 +166,7 @@ func FindUser(c *gin.Context) {
 	//判断传递过来的参数是username还是id
 	if user.UserName != "" {
 
-		ins := db.WithContext(c).Table("users").Where("username = ?", user.UserName).First(&user)
+		ins := mysql.DB.WithContext(c).Table("users").Where("username = ?", user.UserName).First(&user)
 		if ins.Error != nil {
 			c.JSON(200, gin.H{
 				"message": "没有找到匹配用户",
@@ -180,11 +178,12 @@ func FindUser(c *gin.Context) {
 		})
 
 	} else if user.Id != 0 {
-		ins := db.WithContext(c).Table("users").Where("id = ?", user.Id).First(&user)
+		ins := mysql.DB.WithContext(c).Table("users").Where("id = ?", user.Id).First(&user)
 		if ins.Error != nil {
 			c.JSON(200, gin.H{
 				"message": "没有找到匹配用户",
 			})
+			return
 		}
 		c.JSON(200, gin.H{
 			"message": "成功根据id找到用户",
