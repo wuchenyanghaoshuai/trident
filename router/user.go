@@ -10,5 +10,6 @@ func USER_API_ROUTER(r *gin.Engine) {
 	userapi.POST("createuser", user.CreateUser)
 	userapi.DELETE("deleteuser", user.DeleteUser)
 	userapi.PATCH("updateuser", user.UpdateUser)
-	userapi.GET("finduser", user.FindUser)
+	userapi.POST("finduser", user.FindUser)
+	userapi.GET("listuser", user.ListUser)
 }

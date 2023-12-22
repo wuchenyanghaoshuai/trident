@@ -3,9 +3,9 @@ package user
 import (
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
-
+	"net/http"
 	"time"
-	"wuchenyanghaoshuai/trident/controller/mysql"
+	"wuchenyanghaoshuai/trident/controller/dao/mysql"
 )
 
 type User struct {
@@ -17,17 +17,9 @@ type User struct {
 	UserRole string `json:"user_role"`
 }
 
-//var db *gorm.DB
-//
-//func init() {
-//	var err error
-//	dsn := "root:123456@tcp(127.0.0.1:3306)/trident?charset=utf8mb4&parseTime=True&loc=Local"
-//	db, err = gorm.Open(mysql.Open(dsn), &gorm.Config{Logger: logger.Default.LogMode(logger.Info)})
-//	if err != nil {
-//		return
-//	}
-//	fmt.Println(db)
-//}
+type NewUser interface {
+	Create(username, password string) error
+}
 
 // 第一版本写的比较简单，没有把 数据库，和 用户名密码检查 和数据库加密 抽出来 下一步要抽出来让代码更简洁一些
 func CreateUser(c *gin.Context) {
@@ -55,7 +47,9 @@ func CreateUser(c *gin.Context) {
 	user.UserName = user.UserName
 	user.Password = string(b)
 	user.CreateAt = time.Now().Unix()
-	user.UserRole = string(1) //admin=0, user=1
+	baseRole := "1"
+	user.UserRole = baseRole //admin=0, user=1
+
 	mysql.DB.WithContext(c).Table("users").Create(&user)
 	c.JSON(200, gin.H{
 		"message": "创建用户成功",
@@ -122,7 +116,7 @@ func UpdateUser(c *gin.Context) {
 	ins := mysql.DB.WithContext(c).Table("users").Where("id = ?", user.Id).First(&user).Error
 	if ins != nil {
 		c.JSON(200, gin.H{
-			"message": "没有找到匹配用户",
+			"message": "没有找到匹配用户,请输入用户id或者username",
 		})
 		return
 	}
@@ -190,4 +184,21 @@ func FindUser(c *gin.Context) {
 			"data":    user,
 		})
 	}
+}
+
+// list all users
+func ListUser(c *gin.Context) {
+	var users []User
+	ins := mysql.DB.WithContext(c).Table("users").Find(&users).Error
+	if ins != nil {
+		c.JSON(200, gin.H{
+			"message": "没有找到匹配用户",
+		})
+		return
+	}
+	c.JSON(200, gin.H{
+		"message": "成功列出所有用户",
+		"data":    users,
+		"code":    http.StatusOK,
+	})
 }

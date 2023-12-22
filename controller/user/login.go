@@ -6,8 +6,8 @@ import (
 	"github.com/rs/xid"
 	"golang.org/x/crypto/bcrypt"
 	"time"
-	"wuchenyanghaoshuai/trident/controller/mysql"
-	"wuchenyanghaoshuai/trident/controller/redis"
+	"wuchenyanghaoshuai/trident/controller/dao/mysql"
+	"wuchenyanghaoshuai/trident/controller/dao/redis"
 )
 
 type UserLoginForm struct {

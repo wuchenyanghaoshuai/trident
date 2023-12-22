@@ -4,18 +4,39 @@ import (
 	"context"
 	"fmt"
 	"github.com/go-redis/redis/v8"
+	"gopkg.in/ini.v1"
+	"os"
+	"strconv"
 	"time"
 )
 
 func CreateRedisInstance(opType, key string, durationInSeconds time.Duration, values ...string) (string, error) {
 
+	cfg, err := ini.Load("controller/config/config.ini")
+	if err != nil {
+		os.Exit(1)
+	}
+
+	redis_host := cfg.Section("redis").Key("host").String()
+	redis_port := cfg.Section("redis").Key("port").String()
+	redis_username := cfg.Section("redis").Key("username").String()
+	redis_password := cfg.Section("redis").Key("password").String()
+	redis_db_str := cfg.Section("redis").Key("db").String()
+
+	//获取到的redis的db的值是string类型的，需要转换为int类型
+	redis_db, err := strconv.Atoi(redis_db_str)
+	if err != nil {
+		fmt.Println("redis.go redis_db_str转换为int失败", err)
+		os.Exit(1)
+	}
 	rdb := redis.NewClient(&redis.Options{
-		Addr:     "127.0.0.1:6379",
-		Password: "",
-		DB:       0,
+		Addr:     redis_host + ":" + redis_port,
+		Username: redis_username,
+		Password: redis_password,
+		DB:       redis_db,
 	})
 	ctx := context.Background()
-	_, err := rdb.Ping(ctx).Result()
+	_, err = rdb.Ping(ctx).Result()
 	if err != nil {
 		fmt.Println("Failed to ping redis:", err)
 		return err.Error(), err
