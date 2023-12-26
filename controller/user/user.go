@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 	"wuchenyanghaoshuai/trident/controller/dao/mysql"
+	"wuchenyanghaoshuai/trident/controller/dao/redis"
 )
 
 type User struct {
@@ -15,10 +16,6 @@ type User struct {
 	CreateAt int64  `json:"create_at"`
 	UpdateAt int64  `json:"update_at"`
 	UserRole string `json:"user_role"`
-}
-
-type NewUser interface {
-	Create(username, password string) error
 }
 
 // 第一版本写的比较简单，没有把 数据库，和 用户名密码检查 和数据库加密 抽出来 下一步要抽出来让代码更简洁一些
@@ -188,6 +185,14 @@ func FindUser(c *gin.Context) {
 
 // list all users
 func ListUser(c *gin.Context) {
+	_, err := redis.GetRedisKey("wuchenyang:1")
+	if err != nil {
+		c.JSON(200, gin.H{
+			"message": "请先登陆",
+			"code":    "404",
+		})
+		return
+	}
 	var users []User
 	ins := mysql.DB.WithContext(c).Table("users").Find(&users).Error
 	if ins != nil {

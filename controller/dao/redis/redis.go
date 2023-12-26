@@ -65,3 +65,7 @@ func CreateRedisInstance(opType, key string, durationInSeconds time.Duration, va
 		return "", fmt.Errorf("不支持的操作类型: %s", opType)
 	}
 }
+
+func GetRedisKey(key string) (string, error) {
+	return CreateRedisInstance("get", key, 0)
+}

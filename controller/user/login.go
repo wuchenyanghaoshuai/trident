@@ -45,8 +45,9 @@ func Login(c *gin.Context) {
 			durationInSeconds := time.Second * 3600
 			redis.CreateRedisInstance("set", userTokenKey, durationInSeconds, userTokenValue)
 			c.JSON(200, gin.H{
-				"message": "登录成功",
-				"token":   userTokenValue,
+				"message":        "登录成功",
+				"userAccountKey": userTokenKey,
+				"token":          userTokenValue,
 			})
 		}
 	}
