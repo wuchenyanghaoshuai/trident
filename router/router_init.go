@@ -17,6 +17,7 @@ func InitRouter() *gin.Engine {
 	USER_API_ROUTER(r)
 	RegisterAndLogin(r)
 	FILE_ROUTER(r)
+	K8S_ROUTER(r)
 	return r
 }
 func CORSMiddleware() gin.HandlerFunc {
