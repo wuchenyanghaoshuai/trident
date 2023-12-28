@@ -17,3 +17,9 @@ func SetKubernetesConfig() (*kubernetes.Clientset, error) {
 	}
 	return clientset, nil
 }
+
+type Params struct {
+	NameSpace  string `json:"namespace"`
+	DeployName string `json:"deployname"`
+	StsName    string `json:"stsname"`
+}

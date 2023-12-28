@@ -40,11 +40,11 @@ func DeleteNamespace(c *gin.Context) {
 	if err != nil {
 		panic(err)
 	}
-	var ns Namespace
-	if err := c.ShouldBindJSON(&ns); err != nil {
+	var parms public.Params
+	if err := c.ShouldBindJSON(&parms); err != nil {
 		return
 	}
-	namespace := ns.NameSpace
+	namespace := parms.NameSpace
 
 	res := public.IsNamespaceExists(namespace)
 	if !res {
