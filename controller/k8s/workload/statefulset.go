@@ -13,6 +13,7 @@ type StatefulSet struct {
 	Replicas  int32
 	Available int32
 	Image     string
+	Age       string
 }
 
 func ListSts(c *gin.Context) {
@@ -46,7 +47,7 @@ func ListSts(c *gin.Context) {
 		stsInfo.Replicas = *item.Spec.Replicas
 		stsInfo.Available = item.Status.AvailableReplicas
 		stsInfo.Image = item.Spec.Template.Spec.Containers[0].Image
-
+		stsInfo.Age, _ = public.CalculateDays(item.CreationTimestamp.Format("2006-01-02 15:04:05"))
 		stsList = append(stsList, stsInfo)
 	}
 

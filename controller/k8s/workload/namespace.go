@@ -11,6 +11,7 @@ import (
 type Namespace struct {
 	NameSpace string
 	Status    string
+	Age       string
 }
 
 func ListNamespace(c *gin.Context) {
@@ -26,6 +27,7 @@ func ListNamespace(c *gin.Context) {
 		var namespace Namespace
 		namespace.NameSpace = item.Name
 		namespace.Status = string(item.Status.Phase)
+		namespace.Age, _ = public.CalculateDays(item.CreationTimestamp.Format("2006-01-02 15:04:05"))
 		nsList = append(nsList, namespace)
 	}
 	c.JSON(http.StatusOK, gin.H{

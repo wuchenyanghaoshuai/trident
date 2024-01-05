@@ -19,6 +19,7 @@ type NodeInfo struct {
 	Version   string
 	IpAddress string
 	Pods      string
+	Age       string
 }
 
 // 下面的三个函数主要就是把内存获取的kb转换为gb
@@ -62,6 +63,7 @@ func GetNode(c *gin.Context) {
 		//	nodeinfo.Memory = item.Status.Capacity.Memory().String()
 		nodeinfo.Memory = formatKiBToGB(parseResourceQuantity(item.Status.Capacity.Memory().String()))
 		nodeinfo.Pods = item.Status.Capacity.Pods().String()
+		nodeinfo.Age, _ = public.CalculateDays(item.CreationTimestamp.Format("2006-01-02 15:04:05"))
 		nodeList = append(nodeList, nodeinfo)
 	}
 	c.JSON(http.StatusOK, gin.H{

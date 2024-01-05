@@ -2,6 +2,7 @@ package router
 
 import (
 	"github.com/gin-gonic/gin"
+	"wuchenyanghaoshuai/trident/controller/k8s/service"
 	"wuchenyanghaoshuai/trident/controller/k8s/workload"
 )
 
@@ -19,4 +20,6 @@ func K8S_ROUTER(r *gin.Engine) {
 	k8sapi.POST("getsts", workload.ListSts)
 	k8sapi.POST("restartsts", workload.RestartSts)
 	k8sapi.POST("deletests", workload.DeleteSts)
+
+	k8sapi.POST("getsvc", service.ListSvc)
 }

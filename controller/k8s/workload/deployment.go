@@ -17,6 +17,7 @@ type Deployment struct {
 	CpuLimit      string
 	MemoryLimit   string
 	MemoryRequest string
+	Age           string
 }
 
 func ListDeploy(c *gin.Context) {
@@ -54,6 +55,7 @@ func ListDeploy(c *gin.Context) {
 		deployInfo.CpuLimit = item.Spec.Template.Spec.Containers[0].Resources.Limits.Cpu().String()
 		deployInfo.MemoryRequest = item.Spec.Template.Spec.Containers[0].Resources.Requests.Memory().String()
 		deployInfo.MemoryLimit = item.Spec.Template.Spec.Containers[0].Resources.Limits.Memory().String()
+		deployInfo.Age, _ = public.CalculateDays(item.CreationTimestamp.Format("2006-01-02 15:04:05"))
 		deployList = append(deployList, deployInfo)
 	}
 
