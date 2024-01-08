@@ -24,6 +24,7 @@ func SetKubernetesConfig() (*kubernetes.Clientset, error) {
 // 这块主要是用于删除的时候使用的
 type Params struct {
 	NameSpace   string `json:"namespace"`
+	PodName     string `json:"podname"`
 	DeployName  string `json:"deployname"`
 	StsName     string `json:"stsname"`
 	IngressName string `json:"ingressname"`

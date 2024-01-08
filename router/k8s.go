@@ -11,7 +11,9 @@ func K8S_ROUTER(r *gin.Engine) {
 	k8sapi := r.Group("/api/k8s")
 	//node
 	k8sapi.GET("getnodes", workload.GetNode)
-
+	//pods
+	k8sapi.POST("getpods", workload.ListPods)
+	k8sapi.POST("deletepods", workload.DeletePod)
 	//namespace
 	k8sapi.GET("getns", workload.ListNamespace)
 	k8sapi.POST("delns", workload.DeleteNamespace)
