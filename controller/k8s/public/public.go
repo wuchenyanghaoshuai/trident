@@ -21,10 +21,13 @@ func SetKubernetesConfig() (*kubernetes.Clientset, error) {
 	return clientset, nil
 }
 
+// 这块主要是用于删除的时候使用的
 type Params struct {
-	NameSpace  string `json:"namespace"`
-	DeployName string `json:"deployname"`
-	StsName    string `json:"stsname"`
+	NameSpace   string `json:"namespace"`
+	DeployName  string `json:"deployname"`
+	StsName     string `json:"stsname"`
+	IngressName string `json:"ingressname"`
+	SvcName     string `json:"svcname"`
 }
 
 // 判断传入的时间戳到现在是多久

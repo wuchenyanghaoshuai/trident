@@ -58,3 +58,37 @@ func ListSvc(c *gin.Context) {
 		"data": svcList,
 	})
 }
+
+func DelSvc(c *gin.Context) {
+	clientset, err := public.SetKubernetesConfig()
+	if err != nil {
+		panic(err)
+	}
+	var parms public.Params
+	if err := c.ShouldBindJSON(&parms); err != nil {
+		return
+	}
+	namespace := parms.NameSpace
+
+	res := public.IsNamespaceExists(namespace)
+	if !res {
+		c.JSON(http.StatusOK, gin.H{
+			"code": http.StatusOK,
+			"msg":  "namespace not exists",
+		})
+		return
+	}
+
+	err = clientset.CoreV1().Services(namespace).Delete(c, parms.SvcName, metav1.DeleteOptions{})
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"code": 404,
+			"msg":  "Service: " + parms.SvcName + " not found",
+		})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"code": http.StatusOK,
+		"msg":  "Service: " + parms.SvcName + " delete success",
+	})
+}
