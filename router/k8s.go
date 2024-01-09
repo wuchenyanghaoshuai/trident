@@ -2,10 +2,16 @@ package router
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/gorilla/websocket"
 	"wuchenyanghaoshuai/trident/controller/k8s/service"
 	"wuchenyanghaoshuai/trident/controller/k8s/storage"
 	"wuchenyanghaoshuai/trident/controller/k8s/workload"
 )
+
+var upgrader = websocket.Upgrader{
+	ReadBufferSize:  1024,
+	WriteBufferSize: 1024,
+}
 
 func K8S_ROUTER(r *gin.Engine) {
 	k8sapi := r.Group("/api/k8s")
@@ -14,6 +20,7 @@ func K8S_ROUTER(r *gin.Engine) {
 	//pods
 	k8sapi.POST("getpods", workload.ListPods)
 	k8sapi.POST("deletepods", workload.DeletePod)
+	k8sapi.GET("logs", workload.TailLogs)
 	//namespace
 	k8sapi.GET("getns", workload.ListNamespace)
 	k8sapi.POST("delns", workload.DeleteNamespace)

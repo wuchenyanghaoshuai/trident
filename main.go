@@ -14,6 +14,7 @@ func main() {
 			"code":    "200",
 		})
 	})
+
 	fmt.Println("Running Server on http://127.0.0.1:8888")
 	r.Run(":8888")
 }
