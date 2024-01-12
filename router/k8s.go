@@ -3,7 +3,9 @@ package router
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
+	"net/http"
 	"wuchenyanghaoshuai/trident/controller/k8s/service"
+	"wuchenyanghaoshuai/trident/controller/k8s/sshpod"
 	"wuchenyanghaoshuai/trident/controller/k8s/storage"
 	"wuchenyanghaoshuai/trident/controller/k8s/workload"
 )
@@ -15,6 +17,13 @@ var upgrader = websocket.Upgrader{
 
 func K8S_ROUTER(r *gin.Engine) {
 	k8sapi := r.Group("/api/k8s")
+	r.LoadHTMLGlob("template/*")
+	//ssh
+	k8sapi.GET("/", func(c *gin.Context) {
+		c.HTML(http.StatusOK, "ssh.html", nil)
+	})
+
+	k8sapi.GET("ssh", sshpod.TerminalPod)
 	//node
 	k8sapi.GET("getnodes", workload.GetNode)
 	//pods

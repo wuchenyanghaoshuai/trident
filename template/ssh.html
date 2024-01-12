@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Pod SSh</title>
+    <link href="https://cdn.bootcdn.net/ajax/libs/xterm/3.11.0/xterm.css" rel="stylesheet">
+    <script src="https://cdn.bootcdn.net/ajax/libs/xterm/3.11.0/xterm.js"></script>
+    <link href="https://cdn.bootcss.com/xterm/3.11.0/addons/fullscreen/fullscreen.css" rel="stylesheet">
+    <script src="https://cdn.bootcdn.net/ajax/libs/xterm/3.11.0/addons/fullscreen/fullscreen.js"></script>
+</head>
+<body>
+<div>
+    namespace: <input type="text" id="namespace" placeholder="Enter namespace" value="default">
+    Pod Name: <input type="text" id="pod_name" placeholder="Enter pod name" value="nginx">
+    Container Name: <input type="text" id="container_name" placeholder="Enter container name" value="nginx">
+    Command: <input type="text" id="command" placeholder="sh/bash" value="bash">
+    <button onclick="StartSSH()">SSH</button>
+</div>
+<br>
+<div id="pod_ssh"></div>
+
+</body>
+<script>
+    var StartSSH = function() {
+        var xterm = new Terminal({ cursorBlink: true })
+        xterm.open(document.getElementById('pod_ssh'))
+        var namespace = document.getElementById('namespace').value
+        var pod_name = document.getElementById('pod_name').value
+        var container_name = document.getElementById('container_name').value
+        var command = document.getElementById('command').value
+
+        var ws = new WebSocket('ws://127.0.0.1:8888/api/k8s/ssh?namespace=' + namespace + '&pod_name=' + pod_name + '&container_name=' + container_name + '&command=' + command)
+        ws.onopen = function() {
+            xterm.on('data', function(data) {
+                ws.send(JSON.stringify({
+                    msg_type: 'input',
+                    data: data
+                }))
+            })
+        }
+        ws.onmessage = function(res) {
+            xterm.write(res.data)
+        }
+        ws.onerror = function(e) {
+            xterm.write(e)
+            console.log(e)
+        }
+        ws.onclose = function(e) {
+            xterm.write('close')
+            xterm.destroy()
+        }
+    }
+
+</script>
+</html>
