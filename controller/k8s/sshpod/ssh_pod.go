@@ -3,6 +3,7 @@ package sshpod
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	"io/ioutil"
@@ -144,6 +145,7 @@ func PodSSH(wsClient *WSClient, q Query) {
 			TTY:    true,
 		}, scheme.ParameterCodec)
 	// 创建 SPDY executor，用于后续的 Stream 操作
+	fmt.Println(q.Namespace, q.PodName, q.ContainerName, q.Command)
 	exec, err := remotecommand.NewSPDYExecutor(restClientConfig, "POST", request.URL())
 	if err != nil {
 		log.Fatalf("Failed to initialize executor: %v", err)

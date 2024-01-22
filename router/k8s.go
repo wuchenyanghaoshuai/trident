@@ -19,11 +19,11 @@ func K8S_ROUTER(r *gin.Engine) {
 	k8sapi := r.Group("/api/k8s")
 	r.LoadHTMLGlob("template/*")
 	//ssh
-	k8sapi.GET("/", func(c *gin.Context) {
+	k8sapi.GET("/podssh", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "ssh.html", nil)
 	})
 
-	k8sapi.GET("ssh", sshpod.TerminalPod)
+	k8sapi.GET("sshpod", sshpod.TerminalPod)
 	//node
 	k8sapi.GET("getnodes", workload.GetNode)
 	//pods

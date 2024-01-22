@@ -29,7 +29,7 @@
         var container_name = document.getElementById('container_name').value
         var command = document.getElementById('command').value
 
-        var ws = new WebSocket('ws://127.0.0.1:8888/api/k8s/ssh?namespace=' + namespace + '&pod_name=' + pod_name + '&container_name=' + container_name + '&command=' + command)
+        var ws = new WebSocket('ws://127.0.0.1:8888/api/k8s/sshpod?namespace=' + namespace + '&pod_name=' + pod_name + '&container_name=' + container_name + '&command=' + command)
         ws.onopen = function() {
             xterm.on('data', function(data) {
                 ws.send(JSON.stringify({
