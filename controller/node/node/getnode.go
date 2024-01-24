@@ -6,6 +6,15 @@ import (
 	"wuchenyanghaoshuai/trident/controller/dao/mysql"
 )
 
+/* 根据id或者label或者hostname去查询机器信息
+{
+    "label":"devops"
+}
+
+{
+    "id":1
+}
+*/
 // 列出所有节点信息
 func ListHosts(c *gin.Context) {
 	var hosts []HostParams

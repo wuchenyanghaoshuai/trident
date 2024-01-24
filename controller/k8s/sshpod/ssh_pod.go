@@ -145,7 +145,7 @@ func PodSSH(wsClient *WSClient, q Query) {
 			TTY:    true,
 		}, scheme.ParameterCodec)
 	// 创建 SPDY executor，用于后续的 Stream 操作
-	fmt.Println(q.Namespace, q.PodName, q.ContainerName, q.Command)
+	//fmt.Println(q.Namespace, q.PodName, q.ContainerName, q.Command)
 	exec, err := remotecommand.NewSPDYExecutor(restClientConfig, "POST", request.URL())
 	if err != nil {
 		log.Fatalf("Failed to initialize executor: %v", err)
@@ -160,7 +160,8 @@ func PodSSH(wsClient *WSClient, q Query) {
 		TerminalSizeQueue: wsClient,
 	})
 	if err != nil {
-		log.Fatalf("Failed to start stream: %v", err)
+		fmt.Println("Failed to start stream: ", err)
+		return
 	}
 }
 

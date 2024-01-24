@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/ssh"
+	"io/ioutil"
 	"math"
 	"net/http"
 	"strconv"
@@ -11,21 +12,34 @@ import (
 	"wuchenyanghaoshuai/trident/controller/dao/mysql"
 )
 
-// 思路 在获取到前端传递过来的ip和用户名密码以后，模拟使用ssh去登录，如果登录成功，就说明这个ip是可以使用的
+// 思路 在获取到前端传递过来的ip和用户名密码以后，模拟使用ssh去登录，如果登录成功，就说明这个ip是可以使用的,然后拷贝公钥到目标机器上
 // 如果登录成功，就把这个ip和用户名存入数据库，如果登录失败，直接return
 // 登录成功以后就去获取linux的版本号，以及cpu核数，内存大小，如果是centos就返回centos，如果是ubuntu就返回ubuntu
 // host节点信息
+/* postman调接口新增node，参数如下，其中nodtes字段可以为空相当于备注
+{
+    "hostname":"trident111",
+    "ip":"192.168.3.102",
+    "username":"root",
+    "password":"centos",
+    "port" :"22",
+    "label":"devops",
+    "notes":"这个是我创建的一个备注关于node机器"
+}
+
+*/
 type HostParams struct {
-	Id       int               `json:"id" gorm:"primaryKey"`
-	Hostname string            `json:"hostname"gorm:"unique"`
-	Username string            `json:"username"`
-	Password string            `json:"password"`
-	Port     string            `json:"port"`
-	Ip       string            `json:"ip"`
-	Status   bool              `json:"status"`
-	Osinfo   map[string]string `json:"osinfo" gorm:"serializer:json"`
-	Label    string            `json:"label"`
-	Notes    string            `json:"notes"`
+	Id         int               `json:"id" gorm:"primaryKey"`
+	Hostname   string            `json:"hostname"gorm:"unique"`
+	Username   string            `json:"username"`
+	Password   string            `json:"password" gorm:"-"`
+	Port       string            `json:"port"`
+	Ip         string            `json:"ip"`
+	Status     bool              `json:"status"`
+	Osinfo     map[string]string `json:"osinfo" gorm:"serializer:json"`
+	Label      string            `json:"label"`
+	Notes      string            `json:"notes"`
+	PrivateKey string            `json:"private_key" gorm:"-"` //这个字段不会存入数据库
 }
 type RespHostParams struct {
 	Hostname string            `json:"hostname"`
@@ -58,6 +72,21 @@ func AddHost(c *gin.Context) {
 		})
 		return
 	}
+	//新增一个函数就是判断这个是否能登录到这个机器，如果可以的话就执行一下ssh-copyid 的这个操作把本机的公钥复制到目标机器上
+	info := HostParams{
+		Username:   hosts.Username,
+		Password:   hosts.Password,
+		Ip:         hosts.Ip,
+		Port:       hosts.Port,
+		PrivateKey: "controller/config/id_rsa",
+	}
+	if err := CopyID(info); err != nil {
+		c.JSON(200, gin.H{
+			"message": "复制公钥失败",
+		})
+		return
+	}
+	//
 	hosts.Osinfo["osinfo"] = osinfo
 	//这块密码设置为空是因为在存入数据库的时候，密码不需要存入数据库，密码仅仅作为验证是否能登录上目标机器的一个标准
 	hosts.Password = ""
@@ -160,4 +189,67 @@ func MemKBtoGBStringToInt(kbStr string) (int, error) {
 	}
 	gb := kb / (1024 * 1024)        // 将KB转换为GB
 	return int(math.Round(gb)), nil // 使用math.Round四舍五入到最近的整数，并转换为int
+}
+
+func CopyID(info HostParams) error {
+
+	key, err := ioutil.ReadFile(info.PrivateKey)
+	if err != nil {
+		return fmt.Errorf("unable to read private key: %v", err)
+	}
+
+	signer, err := ssh.ParsePrivateKey(key)
+	if err != nil {
+		return fmt.Errorf("unable to parse private key: %v", err)
+	}
+
+	config := &ssh.ClientConfig{
+		User: info.Username,
+		Auth: []ssh.AuthMethod{
+			ssh.PublicKeys(signer),
+			ssh.Password(info.Password),
+		},
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(), // 注意：这是不安全的，实际使用时应该使用更安全的方法
+	}
+
+	// 连接到远程服务器
+	conn, err := ssh.Dial("tcp", fmt.Sprintf("%s:%s", info.Ip, info.Port), config)
+	if err != nil {
+		return fmt.Errorf("unable to connect: %v", err)
+	}
+	defer conn.Close()
+
+	// 获取公钥的内容
+	pubKeyPath := info.PrivateKey + ".pub"
+	pubKeyData, err := ioutil.ReadFile(pubKeyPath)
+	if err != nil {
+		return fmt.Errorf("unable to read public key data: %v", err)
+	}
+
+	// 创建远程.ssh目录（如果它不存在的话）
+	session, err := conn.NewSession()
+	if err != nil {
+		return fmt.Errorf("failed to create session: %v", err)
+	}
+	defer session.Close()
+
+	mkdirCmd := "mkdir -p ~/.ssh"
+	if err := session.Run(mkdirCmd); err != nil {
+		return fmt.Errorf("failed to run: %s, error: %v", mkdirCmd, err)
+	}
+
+	// 将公钥复制到远程服务器的authorized_keys文件
+	pubKeyCmd := fmt.Sprintf("echo '%s' >> ~/.ssh/authorized_keys", pubKeyData)
+	session, err = conn.NewSession()
+	if err != nil {
+		return fmt.Errorf("failed to create session: %v", err)
+	}
+	defer session.Close()
+
+	if err := session.Run(pubKeyCmd); err != nil {
+		return fmt.Errorf("failed to run: %s, error: %v", pubKeyCmd, err)
+	}
+
+	fmt.Println("Public key copied successfully.")
+	return nil
 }
