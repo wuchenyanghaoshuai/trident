@@ -20,6 +20,7 @@ func InitRouter() *gin.Engine {
 	K8S_ROUTER(r)
 	HOST_ROUTER(r)
 	CICD_ROUTER(r)
+	Prometheus_ROUTER(r)
 	return r
 }
 func CORSMiddleware() gin.HandlerFunc {

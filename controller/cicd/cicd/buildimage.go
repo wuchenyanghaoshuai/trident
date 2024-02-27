@@ -3,6 +3,8 @@ package cicd
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"io/ioutil"
+	"net/http"
 	"os/exec"
 	"strings"
 )
@@ -10,7 +12,14 @@ import (
 // 如果要buildimage的话首先第一步先拉代码
 // 然后再 切到正确的分之
 // 然后根据Dockerfile来buildimage
-
+/* postman请求方式
+{
+    "job_name":"wx-go",
+    "change_type":"test",
+    "job_url":"git@192.168.3.101:wx/wx-go.git",
+    "job_branch":"wuchenyangtest"
+}
+*/
 type Build struct {
 	JobName    string `json:"job_name"`
 	ChangeType string `json:"change_type"`
@@ -25,14 +34,15 @@ func CICD(c *gin.Context) {
 		return
 	}
 
-	data, err := BuildImage(build.JobName, build.ChangeType, build.JobUrl, build.JobBranch)
+	imageTag, err := BuildImage(build.JobName, build.ChangeType, build.JobUrl, build.JobBranch)
 	if err != nil {
 		fmt.Println("err:", "buildimage的时候出现了错误", err)
 		return
 	}
 	c.JSON(200, gin.H{
-		"message": "cicd",
-		"data":    data,
+		"message":  "buildimage成功",
+		"imageTag": imageTag,
+		"status":   http.StatusOK,
 	})
 
 }
@@ -46,36 +56,43 @@ func BuildImage(jobname string, changetype string, joburl string, jobbranch stri
 	script := `
 		#!/bin/bash
         cd ./gitcodedic
-		pwd
 	    git clone ` + joburl + `
 		cd ` + jobname + `
-		pwd
 		git checkout ` + jobbranch + `
         commitid=$(git rev-parse HEAD | cut -c 1-6)
         docker build -t ` + harborurl + jobname + `:` + changetype + `-` + "${commitid}" + ` .
 		docker push  ` + harborurl + jobname + `:` + changetype + `-` + "${commitid}" + `  
-		cd .. 
-		pwd
+		cd ..
         rm -rf ` + jobname + `
-		echo ` + harborurl + jobname + `:` + changetype + `-` + "${commitid}" + `
+		echo ` + harborurl + jobname + `:` + changetype + `-` + "${commitid}" + ` > result.txt
 	`
 	cmd := exec.Command("bash", "-c", script)
 
 	output, err := cmd.Output()
-
 	if err != nil {
 		fmt.Println("err111:", err)
 		return "", err
 	}
-	data := string(output)
-	lines := strings.Split(data, "\n")
-	for _, line := range lines {
-		if strings.Contains(line, "192.168.3.103:8888/lieyunzjk") {
-			data = line
-			break
-		}
+	fmt.Println(string(output))
+	imageTagOutput, err := ioutil.ReadFile("/Users/wuchenyang/code/NewCodeForTrident/trident/gitcodedic/result.txt")
+	if err != nil {
+		fmt.Println("err222:", err)
+		return "", err
 	}
-	return data, err
+	imageTag := strings.TrimSpace(string(imageTagOutput))
+	deletefilescript := `
+		#!/bin/bash
+		pwd
+		rm -rf ./gitcodedic/result.txt
+	`
+	cmd = exec.Command("bash", "-c", deletefilescript)
+	outputdel, err := cmd.Output()
+	if err != nil {
+		fmt.Println("err333:", err)
+		return "", err
+	}
+	fmt.Println(string(outputdel))
+	return imageTag, err
 }
 
-// 获取项目到底多少个分支
+//df4d59f37d6b6cb75e876efc9da67849
