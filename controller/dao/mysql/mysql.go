@@ -2,11 +2,12 @@ package mysql
 
 import (
 	"fmt"
+	"os"
+
 	"gopkg.in/ini.v1"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
-	"os"
 )
 
 var DB *gorm.DB
@@ -30,5 +31,5 @@ func init() {
 	if err != nil {
 		return
 	}
-	fmt.Println(DB)
+	//fmt.Println(DB)
 }

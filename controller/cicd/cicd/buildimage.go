@@ -2,11 +2,12 @@ package cicd
 
 import (
 	"fmt"
-	"github.com/gin-gonic/gin"
 	"io/ioutil"
 	"net/http"
 	"os/exec"
 	"strings"
+
+	"github.com/gin-gonic/gin"
 )
 
 // 如果要buildimage的话首先第一步先拉代码
@@ -96,3 +97,9 @@ func BuildImage(jobname string, changetype string, joburl string, jobbranch stri
 }
 
 //df4d59f37d6b6cb75e876efc9da67849
+//imagePullSecrets:
+//      - name: prepullimage
+//imagePullSecrets:
+////- name: prepullimage
+//registry.cn-zhangjiakou.aliyuncs.com/tianjinlieyun
+//registry.cn-zhangjiakou.aliyuncs.com/tianjinlieyun/ailieyun-h5:pre-1.0.0-0388e0

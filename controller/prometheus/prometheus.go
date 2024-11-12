@@ -25,7 +25,7 @@ func Prometheus(c *gin.Context) {
 	vm_port := cfg.Section("victoriaMetrics").Key("port").String()
 
 	vmAddr := fmt.Sprintf("http://%s:%s/api/v1/query", vm_host, vm_port)
-	fmt.Println(vmAddr)
+	fmt.Println("vmAddr: ", vmAddr)
 
 	var promeSql PromeSql
 	if err := c.ShouldBindJSON(&promeSql); err != nil {
@@ -46,7 +46,7 @@ func Prometheus(c *gin.Context) {
 		return
 
 	}
-
+	fmt.Println(string(body))
 	var result map[string]interface{}
 	if err := json.Unmarshal([]byte(body), &result); err != nil {
 		fmt.Println("解析 JSON 数据时出错:", err)
@@ -63,8 +63,6 @@ func Prometheus(c *gin.Context) {
 			}
 		}
 	}
-
-	//	fmt.Println(string(body))
 
 	c.JSON(200, gin.H{
 		"message": "Prometheus",
